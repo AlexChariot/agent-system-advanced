@@ -1,0 +1,66 @@
+# Python
+
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+*.coverage
+
+# Virtual environments
+
+.venv/
+venv/
+env/
+
+# uv
+
+.uv/
+
+# IDE
+
+.vscode/
+.idea/
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# Logs
+
+*.log
+
+# Chroma vector database
+
+chroma/
+chromadb/
+
+# Local data
+
+data/
+memory/
+
+# Ollama models (if stored locally)
+
+models/
+
+# dotenv
+
+.env
+.env.*
+
+# Jupyter
+
+.ipynb_checkpoints/
+
+# Build
+
+dist/
+build/
+*.egg-info/
+
+# Temporary files
+
+tmp/
+temp/

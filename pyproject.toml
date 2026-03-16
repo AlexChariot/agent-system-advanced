@@ -1,0 +1,26 @@
+[project]
+name = "agent-system-advanced"
+version = "0.1.0"
+description = "A local multi-agent AI system with recursive planning, web search, and long-term memory."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "chromadb>=1.5.5",
+    "ddgs>=9.11.4",
+    "duckduckgo-search>=8.1.1",
+    "langchain>=1.2.12",
+    "langchain-chroma>=1.1.0",
+    "langchain-community>=0.4.1",
+    "langchain-ollama>=1.0.1",
+    "langgraph>=1.1.2",
+    "pydantic>=2.12.5",
+]
+
+[project.scripts]
+agent = "main"
+
+[dependency-groups]
+dev = [
+  "black",
+  "ruff"
+]
