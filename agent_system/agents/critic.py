@@ -5,7 +5,6 @@ from langchain_core.messages import HumanMessage
 llm = ChatOllama(model="llama3")
 
 def critic(state):
-    print("***Critic evaluating the result...***")
 
     result = state["result"]
     goal = state["goal"]
@@ -23,7 +22,5 @@ Answer YES or NO.
 """
 
     response = llm.invoke([HumanMessage(content=prompt)])
-    
-    print("\n\t***Evaluation result:", response.content)
 
     return {"evaluation": response.content}

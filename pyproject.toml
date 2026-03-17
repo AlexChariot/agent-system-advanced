@@ -17,10 +17,11 @@ dependencies = [
 ]
 
 [project.scripts]
-agent = "main"
+agent = "agent_system.main:main"
 
-[dependency-groups]
-dev = [
-  "black",
-  "ruff"
-]
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = true

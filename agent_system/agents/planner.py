@@ -5,12 +5,13 @@ from langchain_core.messages import HumanMessage
 llm = ChatOllama(model="llama3")
 
 def planner(state):
-    print("***Planner creating a plan...***")   
+    
+    print("***Planner breaking down the goal into tasks...***")
 
     goal = state["goal"]
 
     prompt = f"""
-Create a step-by-step plan to solve this goal.
+Break this goal into tasks.
 
 Goal:
 {goal}
@@ -22,7 +23,7 @@ Return a list of tasks.
 
     tasks = response.content.split("\n")
     
-    print("\n\t***Plan created:", tasks)
+    print("\n\t***Tasks planned:", tasks)
 
     return {
         "plan": tasks,

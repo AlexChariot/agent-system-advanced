@@ -1,134 +1,256 @@
-# Agent System Advanced
+# Agent Society — Distributed Multi-Agent System (Local LLM)
 
-A local **multi-agent AI system** featuring recursive planning, task delegation, web search, and long-term memory.
+A modular **multi-agent system** designed to run locally on a laptop using a local LLM.
 
-This project demonstrates a modern **agentic architecture** built with:
+This project demonstrates key ideas behind **modern agent architectures**:
 
-* LangGraph for agent orchestration
-* LangChain components
-* Ollama for running local LLMs
-* Chroma for long-term vector memory
-* DuckDuckGo for web search
-* uv for Python dependency management
+* recursive task planning
+* agent collaboration and delegation
+* long-term vector memory
+* web research tools
+* evaluation and refinement loops
+* extensible architecture for distributed agents
 
-The entire system runs **locally on a laptop**.
-
----
-
-# Features
-
-* Multi-agent architecture
-* Recursive task planning
-* Agent-to-agent delegation
-* Web search capability
-* Long-term vector memory
-* Autonomous agent loop
-* Local LLM execution
-* Modular architecture
+The goal is to provide a **clear and hackable reference implementation** for experimenting with multi-agent systems.
 
 ---
 
-# Architecture
+# Overview
 
-The system is composed of four main agents:
+The system organizes several specialized agents that collaborate to solve complex goals.
 
-Planner → Researcher → Executor → Critic
+Each agent performs a focused role in the workflow and shares state with the others.
 
-Workflow:
+Agents implemented:
 
-1. **Planner**
+| Agent       | Role                                          |
+| ----------- | --------------------------------------------- |
+| Coordinator | routes tasks and selects next agent           |
+| Planner     | decomposes goals into actionable tasks        |
+| Researcher  | collects information from the web             |
+| Analyst     | extracts insights from gathered data          |
+| Executor    | produces the final output                     |
+| Critic      | evaluates the result and triggers improvement |
 
-   * Breaks the user goal into actionable tasks.
+---
 
-2. **Researcher**
+# System Flow
 
-   * Retrieves relevant information from:
+```mermaid
+flowchart TD
 
-     * web search
-     * long-term vector memory
+User[User Goal]
 
-3. **Executor**
+Coordinator[Coordinator Agent]
 
-   * Executes the current task using the LLM.
+Planner[Planner Agent]
+Researcher[Researcher Agent]
+Analyst[Analyst Agent]
+Executor[Executor Agent]
+Critic[Critic Agent]
 
-4. **Critic**
+Memory[(Vector Memory)]
+WebSearch[(Web Search)]
 
-   * Evaluates whether the goal has been achieved.
-   * If not, the system re-plans and continues.
+User --> Coordinator
+Coordinator --> Planner
 
-The process repeats until the objective is satisfied.
+Planner --> Researcher
+Researcher --> WebSearch
+
+Researcher --> Analyst
+Analyst --> Executor
+
+Executor --> Memory
+Executor --> Critic
+
+Critic -- Goal satisfied --> End[End]
+
+Critic -- Needs improvement --> Planner
+```
+
+---
+
+# Agent Interaction Graph
+
+This diagram shows **how agents communicate and delegate tasks**.
+
+```mermaid
+flowchart LR
+
+Coordinator --> Planner
+
+Planner --> Researcher
+Planner --> Analyst
+
+Researcher --> Analyst
+
+Analyst --> Executor
+
+Executor --> Critic
+
+Critic --> Planner
+Critic --> Executor
+```
+
+Key interaction patterns:
+
+* Planner decomposes complex goals
+* Researcher gathers data
+* Analyst extracts meaning
+* Executor generates final outputs
+* Critic ensures quality and may restart planning
+
+---
+
+# Internal Agent Loop
+
+Each agent follows a typical **reasoning cycle**.
+
+```mermaid
+flowchart TD
+
+Input[Receive State]
+
+Think[Reason about task]
+
+Act[Use tools or LLM]
+
+Observe[Collect results]
+
+Update[Update shared state]
+
+Input --> Think
+Think --> Act
+Act --> Observe
+Observe --> Update
+Update --> Input
+```
+
+This loop enables **iterative improvement and autonomy**.
+
+---
+
+# Technical Architecture
+
+This diagram shows the system layers.
+
+```mermaid
+flowchart TD
+
+User[User / CLI / API]
+
+Orchestrator[LangGraph Orchestrator]
+
+Agents[Agent Network]
+
+Tools[Tools Layer]
+
+Memory[Vector Memory]
+
+LLM[Local LLM]
+
+Web[Web Search]
+
+User --> Orchestrator
+
+Orchestrator --> Agents
+
+Agents --> Tools
+Agents --> Memory
+Agents --> LLM
+
+Tools --> Web
+```
+
+---
+
+# Technology Stack
+
+Core frameworks:
+
+* LangGraph — agent workflow orchestration
+* LangChain — tool abstractions and LLM interfaces
+
+Local AI models:
+
+* Ollama
+* Llama3 (or any compatible model)
+
+Tools:
+
+* DuckDuckGo search
+* Chroma vector database
+
+Environment management:
+
+* uv (fast Python package manager)
 
 ---
 
 # Project Structure
 
 ```
-agent-system-advanced
+agent-society
 │
 ├── main.py
 ├── graph.py
 ├── state.py
 │
 ├── agents/
+│   ├── coordinator.py
 │   ├── planner.py
 │   ├── researcher.py
+│   ├── analyst.py
 │   ├── executor.py
 │   └── critic.py
 │
 ├── memory/
-│   ├── vector_memory.py
+│   └── vector_memory.py
 │
-├── tools/
-│   └── web_search.py
-│
-└── pyproject.toml
+└── tools/
+    └── web_search.py
 ```
 
----
+Description:
 
-# Requirements
+main.py
+Entry point of the application.
 
-* Python 3.10+
-* Ollama installed
-* uv package manager
+graph.py
+Defines the multi-agent workflow.
+
+state.py
+Shared state passed between agents.
+
+agents/
+Contains each specialized agent.
+
+memory/
+Vector memory implementation.
+
+tools/
+External tools used by agents.
 
 ---
 
 # Installation
 
-## 1. Install uv
+## Install uv
 
 ```
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-## 2. Clone the repository
-
-```
-git clone https://github.com/yourusername/agent-system-advanced.git
-cd agent-system-advanced
-```
-
-## 3. Install dependencies
+## Install project dependencies
 
 ```
 uv sync
 ```
 
-Or manually add them:
-
-```
-uv add langgraph
-uv add langchain
-uv add langchain-community
-uv add chromadb
-uv add duckduckgo-search
-uv add pydantic
-```
-
 ---
 
-# Install the Local LLM
+# Install Local Model
 
 Install Ollama:
 
@@ -136,13 +258,13 @@ Install Ollama:
 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
-Download the model:
+Download a model:
 
 ```
 ollama pull llama3
 ```
 
-Start the Ollama server:
+Start the model server:
 
 ```
 ollama serve
@@ -152,124 +274,113 @@ ollama serve
 
 # Running the System
 
-Run the main program:
+Run the multi-agent application:
 
 ```
 uv run python main.py
 ```
 
-Example interaction:
+Example usage:
 
 ```
 Goal:
-Write a report on open-source LLM trends
+Analyze the impact of open-source LLMs
 ```
 
 The system will automatically:
 
-1. Plan tasks
-2. Perform web research
-3. Execute subtasks
-4. Evaluate results
-5. Repeat if necessary
+1. create a task plan
+2. perform research
+3. analyze collected data
+4. produce a result
+5. evaluate quality
+6. iterate if needed
 
 ---
 
-# System Architecture
-
-```mermaid
-flowchart TD
-
-    User[User Goal]
-
-    Planner[Planner Agent]
-    Researcher[Researcher Agent]
-    Executor[Executor Agent]
-    Critic[Critic Agent]
-
-    Web[Web Search Tool]
-    Memory[Vector Memory]
-
-    LLM[Local LLM - Ollama]
-
-    User --> Planner
-    Planner --> Researcher
-    Researcher --> Web
-    Researcher --> Memory
-    Researcher --> Executor
-    Executor --> LLM
-    Executor --> Critic
-
-    Critic -->|Goal satisfied| End
-    Critic -->|Replan| Planner
-```
-
-
-# Agent Workflow
+# Example Workflow
 
 ```
 User Goal
-   │
-   ▼
-Planner
-   │
-   ▼
-Researcher
-   │
-   ├── Web Search
-   └── Vector Memory
-   │
-   ▼
-Executor
-   │
-   ▼
-Critic
-   │
-   ├── Goal satisfied → END
-   └── Otherwise → Re-plan
+   ↓
+Planner creates tasks
+   ↓
+Researcher collects information
+   ↓
+Analyst extracts insights
+   ↓
+Executor produces output
+   ↓
+Critic evaluates result
+   ↓
+Loop if improvements needed
 ```
 
 ---
 
-# Long-Term Memory
+# Features
 
-The system uses **Chroma** as a vector database.
+Current capabilities:
 
-Each completed task result is stored in memory and can be retrieved later through semantic search.
-
-This allows the agent to accumulate knowledge across executions.
-
----
-
-# Example Use Cases
-
-* Autonomous research agents
-* AI assistants with memory
-* Experimentation with agentic architectures
-* Local AI systems without external APIs
-* Multi-agent workflow experimentation
+* multi-agent collaboration
+* recursive planning
+* self-evaluation loop
+* web research
+* long-term vector memory
+* local LLM execution
 
 ---
 
 # Future Improvements
 
-Potential extensions:
+Possible next steps:
 
-* Browser automation tools
-* Task hierarchy management
-* Multi-agent societies
-* Distributed agents
-* Knowledge graph integration
-* RAG pipelines with external datasets
+Distributed agent execution
+
+Agents running in separate processes or machines using:
+
+* gRPC
+* message queues
+* Redis streams
+
+Agent marketplaces
+
+Agents dynamically bid on tasks.
+
+Tool discovery
+
+Integrate Model Context Protocol (MCP).
+
+Agent-to-agent communication
+
+Implement A2A protocols.
+
+Parallel research agents
+
+Multiple researchers working simultaneously.
+
+Browser automation
+
+Agents capable of browsing websites.
 
 ---
 
-# Disclaimer
+# Educational Goal
 
-This project is intended for experimentation and educational purposes related to **agentic AI systems**.
+This repository is intended as a **learning platform for modern agent architectures**.
+
+It can be extended to build:
+
+* autonomous research agents
+* distributed AI systems
+* agent societies
+* coding assistants
+* intelligent automation platforms
 
 ---
 
-# License
+# Inspiration
 
-MIT License
+Architectures similar to this are being explored in modern agent research and industrial AI systems.
+
+The concepts demonstrated here represent the foundation of **next-generation autonomous AI workflows**.

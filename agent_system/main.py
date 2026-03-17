@@ -1,7 +1,7 @@
-from graph import build_graph
+# from graph import build_graph
 
 def main():
-    
+    from agent_system.graph import build_graph
     print("Welcome to the Agent System!\n")
 
     graph = build_graph()
