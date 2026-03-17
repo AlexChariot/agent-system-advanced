@@ -1,24 +1,66 @@
 # from graph import build_graph
 
 def main():
+    """
+    Main function to run the Agent System.
+
+    This function builds the graph and allows the user to input goals.
+    It then invokes the graph with the goal and prints the final result.
+    """
     from agent_system.graph import build_graph
     print("Welcome to the Agent System!\n")
 
     graph = build_graph()
+    history = []
 
     while True:
+        print("\nOptions:")
+        print("1. Enter a new goal")
+        print("2. View history")
+        print("3. Quit")
 
-        goal = input("\nGoal: ")
+        choice = input("Choose an option (1-3): ")
 
-        result = graph.invoke({
-            "goal": goal,
-            "plan": [],
-            "history": []
-        })
+        if choice == "1":
+            goal = input("\nGoal: ")
 
-        print("\nFINAL RESULT\n")
-        print(result["result"])
+            if not goal.strip():
+                print("Error: Goal cannot be empty.")
+                continue
 
+            try:
+                result = graph.invoke({
+                    "goal": goal,
+                    "plan": [],
+                    "history": []
+                })
+
+                print("\nFINAL RESULT\n")
+                print(result["result"])
+
+                history.append({
+                    "goal": goal,
+                    "result": result["result"]
+                })
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+        elif choice == "2":
+            if not history:
+                print("No history available.")
+            else:
+                print("\nHistory:")
+                for i, item in enumerate(history, 1):
+                    print(f"{i}. Goal: {item['goal']}")
+                    print(f"   Result: {item['result']}\n")
+
+        elif choice == "3":
+            print("Exiting the Agent System.")
+            break
+
+        else:
+            print("Invalid choice. Please enter a number between 1 and 3.")
 
 if __name__ == "__main__":
     main()

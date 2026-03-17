@@ -51,65 +51,35 @@ Agents implemented:
   
 
 ```mermaid
-
 flowchart TD
-
   
-
 User[User Goal]
-
   
-
 Coordinator[Coordinator Agent]
-
   
-
 Planner[Planner Agent]
-
 Researcher[Researcher Agent]
-
 Analyst[Analyst Agent]
-
 Executor[Executor Agent]
-
 Critic[Critic Agent]
-
   
-
 Memory[(Vector Memory)]
-
 WebSearch[(Web Search)]
-
   
-
 User --> Coordinator
-
 Coordinator --> Planner
-
   
-
 Planner --> Researcher
-
 Researcher --> WebSearch
-
   
-
 Researcher --> Analyst
-
 Analyst --> Executor
-
   
-
 Executor --> Memory
-
 Executor --> Critic
-
   
-
 Critic -- Goal satisfied --> End[End]
-
   
-
 Critic -- Needs improvement --> Planner
 
 ```
