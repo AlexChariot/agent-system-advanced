@@ -1,15 +1,17 @@
 from langgraph.graph import StateGraph, END
 
 from agent_system.state import AgentState
+from agent_system.agents.memory_agent import memory_agent
 from agent_system.agents.planner import planner
 from agent_system.agents.researcher import researcher
 from agent_system.agents.analyst import analyst
 from agent_system.agents.executor import executor
 from agent_system.agents.critic import critic
+# from asyncio import graph
 
 def build_graph():
 
-    print("***Building the agent graph...***")
+    # print("***Building the agent graph...***")
 
     graph = StateGraph(AgentState)
 
@@ -19,12 +21,14 @@ def build_graph():
     graph.add_node("analyst", analyst)      # Analysis of gathered information
     graph.add_node("executor", executor)    # Execution of actions based on analysis
     graph.add_node("critic", critic)        # Evaluation of results
-
+    graph.add_node("memory_agent", memory_agent) # Memory management and retrieval
+    
     # Set the entry point of the graph
     graph.set_entry_point("planner")
 
     # Define the main workflow sequence
-    graph.add_edge("planner", "researcher")     # Planner -> Researcher
+    graph.add_edge("planner", "memory_agent")     # Planner -> Memory Agent
+    graph.add_edge("memory_agent", "researcher")  # Memory Agent -> Researcher
     graph.add_edge("researcher", "analyst")     # Researcher -> Analyst
     graph.add_edge("analyst", "executor")       # Analyst -> Executor
     graph.add_edge("executor", "critic")        # Executor -> Critic
@@ -52,6 +56,6 @@ def build_graph():
         }
     )
     
-    print("\n***Agent graph built successfully!***")
+    # print("\n***Agent graph built successfully!***")
 
     return graph.compile()

@@ -2,7 +2,7 @@
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-def analyst(state, model="llama3", output_format="text", insight_types=None):
+def analyst(state, model="llama3.1", output_format="text", insight_types=None):
     """
     Analyze the research and extract key insights using an LLM.
 
@@ -15,7 +15,7 @@ def analyst(state, model="llama3", output_format="text", insight_types=None):
     Returns:
         dict: A dictionary containing the analysis of the research.
     """
-    print("***Analyst analyzing the research...***")
+    # print("***Analyst analyzing the research...***")
 
     research = state["research"]
 
@@ -38,7 +38,7 @@ Research:
     if not response.content:
         raise ValueError("The LLM response is empty or invalid.")
 
-    print("\n\t***Analysis completed with insights:", response.content)
+    # print("\n\t***Analysis completed with insights:", response.content)
 
     if output_format == "json":
         import json

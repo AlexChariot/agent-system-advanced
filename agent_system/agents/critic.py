@@ -2,13 +2,13 @@
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-def critic(state, model="llama3", output_format="text"):
+def critic(state, model="llama3.1", output_format="text"):
     """
     Evaluate if the result satisfies the goal using an LLM.
 
     Args:
         state (dict): The state containing the result and goal.
-        model (str): The Ollama model to use. Default is "llama3".
+        model (str): The Ollama model to use. Default is "llama3.1".
         output_format (str): The format of the output. Can be "text" or "boolean". Default is "text".
 
     Returns:
@@ -40,8 +40,15 @@ Answer YES or NO.
 
     evaluation = response.content.strip().upper()
 
-    if evaluation not in ["YES", "NO"]:
-        raise ValueError("The LLM response must be either 'YES' or 'NO'.")
+    # if evaluation not in ["YES", "NO"]:
+    #     raise ValueError("The LLM response must be either 'YES' or 'NO'.")
+
+    if "YES" in evaluation:
+        evaluation = "YES"
+    elif "NO" in evaluation:
+        evaluation = "NO"
+    else:
+        evaluation = "NO"  # valeur par défaut
 
     if output_format == "boolean":
         evaluation = evaluation == "YES"

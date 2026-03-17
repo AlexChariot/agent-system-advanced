@@ -1,52 +1,49 @@
 #from langchain_community.chat_models import ChatOllama
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
+from agent_system.memory.vector_memory import store_memory
 
-def executor(state, model="llama3", output_format="text"):
-    """
-    Execute the task using an LLM based on the analysis and goal.
+llm = ChatOllama(model="llama3.1")  # initialisation du modèle une fois pour tous les appels à executor
 
-    Args:
-        state (dict): The state containing the analysis and goal.
-        model (str): The Ollama model to use. Default is "llama3".
-        output_format (str): The format of the output. Can be "text" or "json". Default is "text".
+def executor(state):
 
-    Returns:
-        dict: A dictionary containing the result of the execution.
-    """
-    print("***Executor executing the task...***")
-
+    context = state.get("context", "")
     analysis = state["analysis"]
     goal = state["goal"]
 
-    if not analysis or not goal:
-        raise ValueError("Analysis and goal must not be empty.")
+    history = state.get("history", [])
 
     prompt = f"""
-Use this analysis to produce the final result.
+Context:
+{context}
 
 Goal:
 {goal}
 
 Analysis:
 {analysis}
+
+Produce the best final result.
 """
 
-    llm = ChatOllama(model=model)
     response = llm.invoke([HumanMessage(content=prompt)])
+
+    result = response.content
     
-    if not response.content:
-        raise ValueError("The LLM response is empty or invalid.")
+    store_memory(f"Goal: {goal}\nResult: {result}")
 
-    print("\n\t***Execution completed with result:", response.content)
+    # 🔥 mise à jour mémoire court terme
+    # history.append({
+    #     "agent": "executor",
+    #     "result": result
+    # })
+    history = history + [{
+        "agent": "executor",
+        "result": result
+    }]    
 
-    if output_format == "json":
-        import json
-        try:
-            result = json.loads(response.content)
-        except json.JSONDecodeError:
-            result = {"result": response.content}
-    else:
-        result = response.content
-
-    return {"result": result}
+    return {
+        "result": result,
+        "history": [{"agent": "executor", "result": result}]  # juste le nouvel élément
+    }
+    

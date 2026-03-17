@@ -2,19 +2,19 @@
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-def planner(state, model="llama3", output_format="list"):
+def planner(state, model="llama3.1", output_format="list"):
     """
     Break down the goal into tasks using an LLM.
 
     Args:
         state (dict): The state containing the goal.
-        model (str): The Ollama model to use. Default is "llama3".
+        model (str): The Ollama model to use. Default is "llama3.1".
         output_format (str): The format of the output. Can be "list" or "json". Default is "list".
 
     Returns:
         dict: A dictionary containing the plan and the current task.
     """
-    print("***Planner breaking down the goal into tasks...***")
+    # print("***Planner breaking down the goal into tasks...***")
 
     goal = state["goal"]
 
@@ -41,7 +41,7 @@ Return a list of tasks.
     if not tasks:
         raise ValueError("No valid tasks were generated.")
 
-    print("\n\t***Tasks planned:", tasks)
+    # print("\n\t***Tasks planned:", tasks)
 
     if output_format == "json":
         import json

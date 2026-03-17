@@ -14,9 +14,9 @@ This project demonstrates a modern **agentic architecture** using a properly str
 - Agent-to-agent delegation
 - Web search integration
 - Long-term vector memory (Chroma)
-* Evaluation and refinement loops
+- Evaluation and refinement loops
 - Fully local LLM via Ollama
-* Extensible architecture for distributed agents
+- Extensible architecture for distributed agents
 - Clean Python package structure
 - CLI entrypoint via `uv`
 
@@ -40,15 +40,11 @@ Agents implemented:
 | Executor    | produces the final output                     |
 | Critic      | evaluates the result and triggers improvement |
 
-  
 
 ---
-
   
 
 # Architecture
-
-  
 
 ```mermaid
 flowchart TD
@@ -83,7 +79,6 @@ Critic -- Goal satisfied --> End[End]
 Critic -- Needs improvement --> Planner
 
 ```
-
   
 
 ---
@@ -93,11 +88,9 @@ Critic -- Needs improvement --> Planner
 # Agent Interaction Graph
 
   
-
 This diagram shows **how agents communicate and delegate tasks**.
 
   
-
 ```mermaid
 
 flowchart LR
@@ -105,37 +98,21 @@ flowchart LR
   
 
 Coordinator --> Planner
-
   
-
 Planner --> Researcher
-
 Planner --> Analyst
-
   
-
 Researcher --> Analyst
-
   
-
 Analyst --> Executor
-
   
-
 Executor --> Critic
-
   
-
 Critic --> Planner
-
 Critic --> Executor
-
 ```
-
   
-
 Key interaction patterns:
-
 * Planner decomposes complex goals
 * Researcher gathers data
 * Analyst extracts meaning
@@ -147,47 +124,26 @@ Key interaction patterns:
 # Internal Agent Loop
 
 Each agent follows a typical **reasoning cycle**.
-
 ```mermaid
-
 flowchart TD
-
   
-
 Input[Receive State]
-
   
-
 Think[Reason about task]
-
   
-
 Act[Use tools or LLM]
-
   
-
 Observe[Collect results]
-
   
-
 Update[Update shared state]
-
   
-
 Input --> Think
-
 Think --> Act
-
 Act --> Observe
-
 Observe --> Update
-
 Update --> Input
-
 ```
-
 This loop enables **iterative improvement and autonomy**.
-
 
 ---
 
@@ -196,61 +152,33 @@ This loop enables **iterative improvement and autonomy**.
 This diagram shows the system layers.
 
 ```mermaid
-
 flowchart TD
-
   
-
 User[User / CLI / API]
-
   
-
 Orchestrator[LangGraph Orchestrator]
-
   
-
 Agents[Agent Network]
-
   
-
 Tools[Tools Layer]
-
   
-
 Memory[Vector Memory]
-
   
-
 LLM[Local LLM]
-
   
-
 Web[Web Search]
-
   
-
 User --> Orchestrator
-
   
-
 Orchestrator --> Agents
-
   
-
 Agents --> Tools
-
 Agents --> Memory
-
 Agents --> LLM
-
   
-
 Tools --> Web
-
 ```
-
   
-
 ---
 
 # Technology Stack
@@ -303,9 +231,6 @@ agent-system-advanced/
 ├── uv.lock
 └── README.md
 ```
-
-
-  
 
 ---
 
@@ -366,9 +291,6 @@ ollama pull llama3
 ollama serve
 ```
 
-
-
-
 ---
 
 # Running the System
@@ -390,7 +312,6 @@ uv run python -m agent_system.main
 ---
 
 
-
 # Example
 ```
 
@@ -399,8 +320,6 @@ Goal:
 Analyze the impact of open-source LLMs
 
 ```
-
-  
 
 The system will automatically:
 
@@ -431,11 +350,8 @@ This ensures:
 # Long-Term Memory
 
 The system uses **Chroma** as a vector database.
-
 - Stores task outputs
-    
 - Retrieves relevant past knowledge
-    
 - Enables cross-session reasoning
 
 ---
@@ -491,16 +407,13 @@ Executor produces output
 Critic evaluates result
 ↓
 Loop if improvements needed
+
 ```
   
-
 ---
   
-
 # Future Improvements
-
   
-
 Possible next steps:
 
 - Autonomous browser agent

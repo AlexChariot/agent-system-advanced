@@ -1,5 +1,9 @@
 # from graph import build_graph
 
+import logging
+from unittest import result
+
+
 def main():
     """
     Main function to run the Agent System.
@@ -9,6 +13,10 @@ def main():
     """
     from agent_system.graph import build_graph
     print("Welcome to the Agent System!\n")
+    
+    silence_logs = True  # Set to False to enable logging
+    if silence_logs:
+        logging.disable(logging.WARNING)    # Disable warnings and below (including info and debug logs)
 
     graph = build_graph()
     history = []
@@ -32,12 +40,15 @@ def main():
                 result = graph.invoke({
                     "goal": goal,
                     "plan": [],
-                    "history": []
+                    "history": history
                 })
-
+                
+                
+                
                 print("\nFINAL RESULT\n")
                 print(result["result"])
 
+                # Update history with the goal and result
                 history.append({
                     "goal": goal,
                     "result": result["result"]
