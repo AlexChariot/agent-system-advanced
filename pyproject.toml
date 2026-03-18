@@ -16,6 +16,12 @@ dependencies = [
     "pydantic>=2.12.5",
 ]
 
+[dependency-groups]
+dev = [
+  "black",
+  "ruff"
+]
+
 [project.scripts]
 agent = "agent_system.main:main"
 

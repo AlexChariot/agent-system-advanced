@@ -2,13 +2,12 @@
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-def planner(state, model="llama3.1", output_format="list"):
+def planner(state, output_format="list"):
     """
     Break down the goal into tasks using an LLM.
 
     Args:
-        state (dict): The state containing the goal.
-        model (str): The Ollama model to use. Default is "llama3.1".
+        state (dict): The state containing the goal and selected_model.
         output_format (str): The format of the output. Can be "list" or "json". Default is "list".
 
     Returns:
@@ -17,6 +16,7 @@ def planner(state, model="llama3.1", output_format="list"):
     # print("***Planner breaking down the goal into tasks...***")
 
     goal = state["goal"]
+    model = state.get("selected_model", "llama3.1")
 
     prompt = f"""
 Break this goal into tasks.

@@ -2,13 +2,12 @@
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-def critic(state, model="llama3.1", output_format="text"):
+def critic(state, output_format="text"):
     """
     Evaluate if the result satisfies the goal using an LLM.
 
     Args:
-        state (dict): The state containing the result and goal.
-        model (str): The Ollama model to use. Default is "llama3.1".
+        state (dict): The state containing the result, goal, and selected_model.
         output_format (str): The format of the output. Can be "text" or "boolean". Default is "text".
 
     Returns:
@@ -16,6 +15,7 @@ def critic(state, model="llama3.1", output_format="text"):
     """
     result = state["result"]
     goal = state["goal"]
+    model = state.get("selected_model", "llama3.1")
 
     if not result or not goal:
         raise ValueError("Result and goal must not be empty.")

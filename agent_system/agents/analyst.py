@@ -2,13 +2,12 @@
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 
-def analyst(state, model="llama3.1", output_format="text", insight_types=None):
+def analyst(state, output_format="text", insight_types=None):
     """
     Analyze the research and extract key insights using an LLM.
 
     Args:
-        state (dict): The state containing the research.
-        model (str): The Ollama model to use. Default is "llama3".
+        state (dict): The state containing the research and selected_model.
         output_format (str): The format of the output. Can be "text" or "json". Default is "text".
         insight_types (list): The types of insights to extract. Default is None.
 
@@ -18,6 +17,7 @@ def analyst(state, model="llama3.1", output_format="text", insight_types=None):
     # print("***Analyst analyzing the research...***")
 
     research = state["research"]
+    model = state.get("selected_model", "llama3.1")
 
     if not research:
         raise ValueError("Research must not be empty.")

@@ -18,6 +18,7 @@ class AgentState(TypedDict):
         context (str): Compressed information that provides context for the agent's decisions.
         retrieved_memory (str): Long-term memory that can be retrieved for use in decision-making.
         evaluation (str): Assessment of the current state or performance.
+        selected_model (str): The LLM model to use for all agents.
     """
 
     goal: str
@@ -32,3 +33,4 @@ class AgentState(TypedDict):
     context: str                                    # informations compressées pour fournir du contexte aux agents
     retrieved_memory: str                           # mémoire long terme récupérée pour être utilisée dans la prise de décision
     evaluation: str                                 # évaluation de l'état actuel ou de la performance
+    selected_model: str                             # le modèle LLM sélectionné pour tous les agents
