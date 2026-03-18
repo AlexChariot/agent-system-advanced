@@ -264,13 +264,6 @@ cd agent-system-advanced
 uv sync
 ```
 
-Optional (dev tools):
-
-```
-uv sync --group dev
-```
----
-
 # Install the Local LLM
 
 ## Install Ollama
