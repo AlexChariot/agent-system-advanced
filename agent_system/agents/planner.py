@@ -24,7 +24,7 @@ Break this goal into tasks.
 Goal:
 {goal}
 
-Return a list of tasks.
+Return a list of tasks, one per line, in the order they should be executed. Do not include numbering or bullet points.
 """
 
     llm = ChatOllama(model=model)
