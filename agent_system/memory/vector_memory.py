@@ -1,74 +1,103 @@
-#from langchain_community.vectorstores import Chroma
 from langchain_chroma import Chroma
-#from langchain_community.embeddings import OllamaEmbeddings
 from langchain_ollama import OllamaEmbeddings
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize embeddings and vector store
-try:
-    embedding = OllamaEmbeddings(model="llama3")
-    vectorstore = Chroma(
-        collection_name="long_term_memory",
-        embedding_function=embedding,
-    )
-    logger.info("Vector store initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize vector store: {str(e)}")
-    raise
+# Lazy singletons — initialized on first use, not at import time
+_embedding = None
+_vectorstore = None
 
-def store_memory(text):
+
+def _get_vectorstore() -> Chroma:
     """
-    Stores text in the vector memory.
+    Returns the vectorstore, initializing it on the first call.
 
-    Args:
-        text (str): The text to store in memory
+    Lazy initialization prevents a crash at import time if Ollama is not
+    running yet.
 
     Returns:
-        bool: True if storage was successful, False otherwise
+        Chroma: The vectorstore instance.
+
+    Raises:
+        RuntimeError: If Ollama is unreachable or initialization fails.
+    """
+    global _embedding, _vectorstore
+
+    if _vectorstore is not None:
+        return _vectorstore
+
+    try:
+        logger.info("[VectorMemory] Initializing vectorstore...")
+        _embedding = OllamaEmbeddings(model="llama3.1")
+        _vectorstore = Chroma(
+            collection_name="long_term_memory",
+            embedding_function=_embedding,
+        )
+        logger.info("[VectorMemory] Vectorstore initialized successfully.")
+    except Exception as e:
+        logger.error(f"[VectorMemory] Initialization failed: {e}")
+        raise RuntimeError(
+            f"Could not initialize the vectorstore. "
+            f"Make sure Ollama is running (`ollama serve`). Detail: {e}"
+        ) from e
+
+    return _vectorstore
+
+
+def store_memory(text: str) -> bool:
+    """
+    Stores a text in the vector memory.
+
+    Args:
+        text (str): The text to store.
+
+    Returns:
+        bool: True if storage succeeded, False otherwise.
     """
     if not text or not isinstance(text, str):
-        logger.error("Invalid text provided for storage")
+        logger.error("[VectorMemory] Invalid text provided for storage.")
         return False
 
     try:
-        logger.info(f"Storing in memory: {text[:100]}...")  # Log first 100 chars
-        vectorstore.add_texts([text])
-        logger.info("Memory stored successfully")
+        vs = _get_vectorstore()
+        logger.info(f"[VectorMemory] Storing: {text[:100]}...")
+        vs.add_texts([text])
+        logger.info("[VectorMemory] Memory stored successfully.")
         return True
     except Exception as e:
-        logger.error(f"Error storing memory: {str(e)}")
+        logger.error(f"[VectorMemory] Error during storage: {e}")
         return False
 
-def recall_memory(query, k=5):
+
+def recall_memory(query: str, k: int = 5) -> str:
     """
-    Recalls memories from the vector store based on a query.
+    Retrieves memories from the vectorstore based on a query.
 
     Args:
-        query (str): The query to search for in memory
-        k (int): Number of results to return (default: 5)
+        query (str): The search query.
+        k (int): Number of results to return (default: 5).
 
     Returns:
-        str: Combined recalled memories as a single string
+        str: Retrieved memories concatenated as a single string.
     """
     if not query or not isinstance(query, str):
-        logger.error("Invalid query provided for recall")
-        return "Invalid query provided."
+        logger.error("[VectorMemory] Invalid query provided for recall.")
+        return "Invalid query."
 
     try:
-        logger.info(f"Recalling from memory with query: {query}")
-        docs = vectorstore.similarity_search(query, k=k)
+        vs = _get_vectorstore()
+        logger.info(f"[VectorMemory] Recalling memories for: {query[:80]}...")
+        docs = vs.similarity_search(query, k=k)
 
         if not docs:
-            logger.warning("No relevant memories found")
+            logger.warning("[VectorMemory] No relevant memories found.")
             return "No relevant memories found."
 
         recalled_text = "\n".join([d.page_content for d in docs])
-        logger.info(f"Recalled {len(docs)} memories")
+        logger.info(f"[VectorMemory] {len(docs)} memory/memories recalled.")
         return recalled_text
+
     except Exception as e:
-        logger.error(f"Error recalling memory: {str(e)}")
-        return f"An error occurred during recall: {str(e)}"
+        logger.error(f"[VectorMemory] Error during recall: {e}")
+        return f"Error during memory recall: {e}"

@@ -14,6 +14,7 @@ dependencies = [
     "langchain-ollama>=1.0.1",
     "langgraph>=1.1.2",
     "pydantic>=2.12.5",
+    "typer>=0.24.1",
 ]
 
 [dependency-groups]
@@ -23,7 +24,7 @@ dev = [
 ]
 
 [project.scripts]
-agent = "agent_system.main:main"
+agent = "agent_system.main:app"
 
 [build-system]
 requires = ["setuptools"]

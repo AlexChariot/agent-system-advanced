@@ -1,27 +1,33 @@
-#from langchain_community.chat_models import ChatOllama
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
+import logging
 
-def critic(state, output_format="text"):
+logger = logging.getLogger(__name__)
+
+
+def critic(state: dict, output_format: str = "text") -> dict:
     """
-    Evaluate if the result satisfies the goal using an LLM.
+    Evaluates whether the result satisfies the goal.
+
+    Returns "YES" to end the workflow, or "NO" to send it back to the manager.
 
     Args:
-        state (dict): The state containing the result, goal, and selected_model.
-        output_format (str): The format of the output. Can be "text" or "boolean". Default is "text".
+        state (dict): Current state containing `result`, `goal`, and `selected_model`.
+        output_format (str): "text" (default) or "boolean".
 
     Returns:
-        dict: A dictionary containing the evaluation of the result.
+        dict: `evaluation` ("YES" | "NO") and a `history` entry.
     """
-    result = state["result"]
-    goal = state["goal"]
+    result = state.get("result", "")
+    goal = state.get("goal", "")
     model = state.get("selected_model", "llama3.1")
 
-    if not result or not goal:
-        raise ValueError("Result and goal must not be empty.")
+    if not result:
+        raise ValueError("[Critic] The result field is empty.")
+    if not goal:
+        raise ValueError("[Critic] The goal field is empty.")
 
-    prompt = f"""
-Evaluate if this result satisfies the goal.
+    prompt = f"""You are a critic agent. Evaluate whether this result satisfies the goal.
 
 Goal:
 {goal}
@@ -29,28 +35,33 @@ Goal:
 Result:
 {result}
 
-Answer YES or NO.
+Reply with ONLY YES or NO.
+- YES: the result is complete and satisfactory.
+- NO:  the result is incomplete, incorrect, or insufficient.
 """
 
     llm = ChatOllama(model=model)
     response = llm.invoke([HumanMessage(content=prompt)])
 
     if not response.content:
-        raise ValueError("The LLM response is empty or invalid.")
+        raise ValueError("[Critic] The LLM response is empty.")
 
-    evaluation = response.content.strip().upper()
+    raw = response.content.strip().upper()
 
-    # if evaluation not in ["YES", "NO"]:
-    #     raise ValueError("The LLM response must be either 'YES' or 'NO'.")
-
-    if "YES" in evaluation:
+    if "YES" in raw:
         evaluation = "YES"
-    elif "NO" in evaluation:
+    elif "NO" in raw:
         evaluation = "NO"
     else:
-        evaluation = "NO"  # valeur par défaut
+        logger.warning(f"[Critic] Ambiguous response '{raw}', falling back to NO.")
+        evaluation = "NO"
 
     if output_format == "boolean":
-        evaluation = evaluation == "YES"
+        return {"evaluation": evaluation == "YES"}
 
-    return {"evaluation": evaluation}
+    logger.info(f"[Critic] Evaluation: {evaluation}")
+
+    return {
+        "evaluation": evaluation,
+        "history": [{"agent": "critic", "evaluation": evaluation}],
+    }

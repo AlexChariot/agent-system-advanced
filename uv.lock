@@ -21,6 +21,7 @@ dependencies = [
     { name = "langchain-ollama" },
     { name = "langgraph" },
     { name = "pydantic" },
+    { name = "typer" },
 ]
 
 [package.dev-dependencies]
@@ -40,6 +41,7 @@ requires-dist = [
     { name = "langchain-ollama", specifier = ">=1.0.1" },
     { name = "langgraph", specifier = ">=1.1.2" },
     { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "typer", specifier = ">=0.24.1" },
 ]
 
 [package.metadata.requires-dev]

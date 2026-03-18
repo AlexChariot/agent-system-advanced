@@ -1,61 +1,79 @@
 from langgraph.graph import StateGraph, END
 
 from agent_system.state import AgentState
-from agent_system.agents.memory_agent import memory_agent
+from agent_system.agents.manager import manager
 from agent_system.agents.planner import planner
 from agent_system.agents.researcher import researcher
 from agent_system.agents.analyst import analyst
 from agent_system.agents.executor import executor
 from agent_system.agents.critic import critic
-# from asyncio import graph
+from agent_system.agents.memory_agent import memory_agent
+
+
+def _route_from_manager(state: AgentState) -> str:
+    """
+    Pure routing function: reads `next_agent` from the state and returns
+    the name of the next node.
+    Kept separate from the manager node to avoid double invocation.
+    """
+    return state.get("next_agent", "planner")
+
+
+def _should_end(state: AgentState) -> str:
+    """
+    After the critic: ends the workflow if the evaluation is positive,
+    otherwise routes back to the manager.
+    """
+    if state.get("evaluation", "") == "YES":
+        return END
+    return "manager"
+
 
 def build_graph():
-
-    # print("***Building the agent graph...***")
-
     graph = StateGraph(AgentState)
 
-    # Add all agent nodes to the graph
-    graph.add_node("planner", planner)      # Initial planning node
-    graph.add_node("researcher", researcher)  # Research and information gathering
-    graph.add_node("analyst", analyst)      # Analysis of gathered information
-    graph.add_node("executor", executor)    # Execution of actions based on analysis
-    graph.add_node("critic", critic)        # Evaluation of results
-    graph.add_node("memory_agent", memory_agent) # Memory management and retrieval
-    
-    # Set the entry point of the graph
-    graph.set_entry_point("planner")
+    # ── Nodes ─────────────────────────────────────────────────────────────────
+    graph.add_node("manager", manager)            # decides next_agent
+    graph.add_node("memory_agent", memory_agent)  # enriches context after planning
+    graph.add_node("planner", planner)
+    graph.add_node("researcher", researcher)
+    graph.add_node("analyst", analyst)
+    graph.add_node("executor", executor)
+    graph.add_node("critic", critic)
 
-    # Define the main workflow sequence
-    graph.add_edge("planner", "memory_agent")     # Planner -> Memory Agent
-    graph.add_edge("memory_agent", "researcher")  # Memory Agent -> Researcher
-    graph.add_edge("researcher", "analyst")     # Researcher -> Analyst
-    graph.add_edge("analyst", "executor")       # Analyst -> Executor
-    graph.add_edge("executor", "critic")        # Executor -> Critic
+    # ── Entry point ───────────────────────────────────────────────────────────
+    graph.set_entry_point("manager")
 
-    def loop(state):
-        """
-        Conditional edge function to determine if the workflow should continue or end.
-        Args:
-            state: The current state of the graph
-        Returns:
-            The next node to execute or END if the workflow is complete
-        """
-        if "YES" in state["evaluation"]:
-            return END
+    # ── Routing from the manager ──────────────────────────────────────────────
+    graph.add_conditional_edges(
+        "manager",
+        _route_from_manager,
+        {
+            "planner":    "planner",
+            "researcher": "researcher",
+            "analyst":    "analyst",
+            "executor":   "executor",
+            "critic":     "critic",
+        },
+    )
 
-        return "planner"
+    # ── After the planner: memory enrichment, then back to the manager ────────
+    graph.add_edge("planner", "memory_agent")
+    graph.add_edge("memory_agent", "manager")
 
-    # Add conditional edges from critic to either continue the loop or end
+    # ── All other agents route back through the manager ───────────────────────
+    graph.add_edge("researcher", "manager")
+    graph.add_edge("analyst", "manager")
+    graph.add_edge("executor", "manager")
+
+    # ── Conditional exit from the critic ─────────────────────────────────────
     graph.add_conditional_edges(
         "critic",
-        loop,
+        _should_end,
         {
-            "planner": "planner",  # Continue the loop if evaluation is not "YES"
-            END: END                # End the workflow if evaluation is "YES"
-        }
+            "manager": "manager",
+            END: END,
+        },
     )
-    
-    # print("\n***Agent graph built successfully!***")
 
     return graph.compile()

@@ -1,47 +1,44 @@
-#from langchain_community.chat_models import ChatOllama
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
+import logging
+import json
 
-def analyst(state, output_format="text", insight_types=None):
+logger = logging.getLogger(__name__)
+
+
+def analyst(state: dict, output_format: str = "text", insight_types: list = None) -> dict:
     """
-    Analyze the research and extract key insights using an LLM.
+    Analyzes research data and extracts key insights via the LLM.
 
     Args:
-        state (dict): The state containing the research and selected_model.
-        output_format (str): The format of the output. Can be "text" or "json". Default is "text".
-        insight_types (list): The types of insights to extract. Default is None.
+        state (dict): Current state containing `research` and `selected_model`.
+        output_format (str): "text" (default) or "json".
+        insight_types (list): Optional list of insight categories to focus on.
 
     Returns:
-        dict: A dictionary containing the analysis of the research.
+        dict: `analysis` and a `history` entry.
     """
-    # print("***Analyst analyzing the research...***")
-
-    research = state["research"]
+    research = state.get("research", "")
     model = state.get("selected_model", "llama3.1")
 
     if not research:
-        raise ValueError("Research must not be empty.")
+        raise ValueError("[Analyst] The research field is empty.")
 
-    prompt = f"""
-Analyze this research and extract key insights.
+    prompt = f"""Analyze this research and extract the key insights.
 
 Research:
 {research}
 """
-
     if insight_types:
-        prompt += f"\n\nFocus on the following types of insights: {', '.join(insight_types)}"
+        prompt += f"\n\nFocus on: {', '.join(insight_types)}"
 
     llm = ChatOllama(model=model)
     response = llm.invoke([HumanMessage(content=prompt)])
-    
-    if not response.content:
-        raise ValueError("The LLM response is empty or invalid.")
 
-    # print("\n\t***Analysis completed with insights:", response.content)
+    if not response.content:
+        raise ValueError("[Analyst] The LLM response is empty.")
 
     if output_format == "json":
-        import json
         try:
             analysis = json.loads(response.content)
         except json.JSONDecodeError:
@@ -49,4 +46,9 @@ Research:
     else:
         analysis = response.content
 
-    return {"analysis": analysis}
+    logger.info("[Analyst] Analysis complete.")
+
+    return {
+        "analysis": analysis,
+        "history": [{"agent": "analyst", "chars": len(str(analysis))}],
+    }

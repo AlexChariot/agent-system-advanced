@@ -1,37 +1,52 @@
 from agent_system.tools.web_search import search
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def researcher(state):
+
+def researcher(state: dict) -> dict:
     """
-    Conducts research based on the current task in the state.
+    Performs a web search for the current task.
+
+    Also advances the plan: removes the processed task and sets `current_task`
+    to the next one if available. When the plan is exhausted, `current_task`
+    is set to None to signal the manager that there are no more tasks.
 
     Args:
-        state (dict): The current state containing the task to research
+        state (dict): Current state containing `current_task` and `plan`.
 
     Returns:
-        dict: Updated state with the research data
+        dict: `research`, updated `plan`, `current_task`, and a `history` entry.
     """
-    logger.info("***Researcher conducting research...***")
+    task = state.get("current_task")
+    plan = state.get("plan", [])
 
-    try:
-        task = state.get("current_task")
-        if not task:
-            raise ValueError("No current task found in state")
+    if not task:
+        raise ValueError("[Researcher] No current task found in state.")
 
-        logger.info(f"Researching task: {task}")
-        data = search(task)
+    logger.info(f"[Researcher] Searching for: {task}")
+    data = search(task)
 
-        if not data:
-            logger.warning("No research data found for the task")
-            data = "No relevant information found."
+    if not data:
+        logger.warning("[Researcher] No results found.")
+        data = "No relevant information found."
 
-        logger.info(f"Research completed with data: {data[:100]}...")  # Log first 100 chars of data
-        return {"research": data}
+    # Advance the plan by removing the completed task
+    remaining_plan = [t for t in plan if t != task]
 
-    except Exception as e:
-        logger.error(f"Error during research: {str(e)}")
-        return {"research": f"An error occurred during research: {str(e)}"}
+    # None signals to the manager that the plan is exhausted
+    next_task = remaining_plan[0] if remaining_plan else None
+
+    if next_task is None:
+        logger.info("[Researcher] Plan exhausted — all tasks have been processed.")
+    else:
+        logger.info(f"[Researcher] Next task: {next_task}")
+
+    logger.info(f"[Researcher] Search complete ({len(data)} chars).")
+
+    return {
+        "research": data,
+        "plan": remaining_plan,
+        "current_task": next_task,
+        "history": [{"agent": "researcher", "task": task, "chars": len(data)}],
+    }

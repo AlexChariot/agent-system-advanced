@@ -1,26 +1,36 @@
-#from langchain_community.chat_models import ChatOllama
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 from agent_system.memory.vector_memory import store_memory
+import logging
 
-def executor(state):
+logger = logging.getLogger(__name__)
+
+
+def executor(state: dict) -> dict:
     """
-    Execute the plan based on analysis using an LLM.
+    Produces the final result from the context, goal, and analysis.
+
+    Also stores the result in long-term vector memory for future retrieval.
 
     Args:
-        state (dict): The state containing context, analysis, goal, and selected_model.
+        state (dict): Current state containing `context`, `analysis`, `goal`,
+                      and `selected_model`.
 
     Returns:
-        dict: Updated state with the result and history.
+        dict: `result` and a `history` entry.
     """
     context = state.get("context", "")
-    analysis = state["analysis"]
-    goal = state["goal"]
+    analysis = state.get("analysis", "")
+    goal = state.get("goal", "")
     model = state.get("selected_model", "llama3.1")
 
-    history = state.get("history", [])
+    if not analysis:
+        raise ValueError("[Executor] The analysis field is empty.")
+    if not goal:
+        raise ValueError("[Executor] The goal field is empty.")
 
-    prompt = f"""
+    prompt = f"""You are an executor agent. Produce the best possible final result.
+
 Context:
 {context}
 
@@ -30,28 +40,18 @@ Goal:
 Analysis:
 {analysis}
 
-Produce the best final result.
+Produce a complete, directly usable response.
 """
 
     llm = ChatOllama(model=model)
     response = llm.invoke([HumanMessage(content=prompt)])
 
     result = response.content
-    
     store_memory(f"Goal: {goal}\nResult: {result}")
 
-    # 🔥 mise à jour mémoire court terme
-    # history.append({
-    #     "agent": "executor",
-    #     "result": result
-    # })
-    history = history + [{
-        "agent": "executor",
-        "result": result
-    }]    
+    logger.info(f"[Executor] Result produced ({len(result)} chars).")
 
     return {
         "result": result,
-        "history": [{"agent": "executor", "result": result}]  # juste le nouvel élément
+        "history": [{"agent": "executor", "chars": len(result)}],
     }
-    

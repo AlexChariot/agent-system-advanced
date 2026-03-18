@@ -1,45 +1,44 @@
-from langchain_ollama import ChatOllama
-from langchain_core.messages import HumanMessage
-
 from agent_system.memory.vector_memory import recall_memory
+import logging
 
-def memory_agent(state):
+logger = logging.getLogger(__name__)
+
+
+def memory_agent(state: dict) -> dict:
     """
-    Manage and compress context using an LLM.
+    Enriches the state with long-term memories relevant to the current goal.
+
+    Called after the planner to inject context from the vector memory before
+    the other agents begin working.
 
     Args:
-        state (dict): The state containing history, goal, and selected_model.
+        state (dict): Current state containing at least `goal`.
 
     Returns:
-        dict: Updated state with context and retrieved_memory.
+        dict: Updated state with `retrieved_memory`, `context`, and a `history` entry.
     """
-    history = state.get("history", [])
-    goal = state["goal"]
-    model = state.get("selected_model", "llama3.1")
+    goal = state.get("goal", "")
+    plan = state.get("plan", [])
 
-    # Récupération mémoire long terme
-    retrieved = recall_memory(goal)
+    if not goal:
+        logger.warning("[MemoryAgent] No goal found — skipping memory enrichment.")
+        return {}
 
-    # Compression du contexte
-    prompt = f"""
-Summarize the important context for solving the goal.
+    # Query on goal + first task for more precise retrieval
+    query = goal
+    if plan:
+        query = f"{goal} — {plan[0]}"
 
-Goal:
-{goal}
+    logger.info(f"[MemoryAgent] Retrieving memories for: {query[:80]}...")
+    retrieved = recall_memory(query)
 
-History:
-{history}
+    # Context compresses memories for downstream agents
+    context = f"[Retrieved long-term memory]\n{retrieved}" if retrieved else ""
 
-Relevant past memory:
-{retrieved}
-
-Return a concise context.
-"""
-
-    llm = ChatOllama(model=model)
-    response = llm.invoke([HumanMessage(content=prompt)])
+    logger.info(f"[MemoryAgent] Context injected ({len(retrieved)} chars).")
 
     return {
-        "context": response.content,
-        "retrieved_memory": retrieved
+        "retrieved_memory": retrieved,
+        "context": context,
+        "history": [{"agent": "memory_agent", "retrieved_chars": len(retrieved)}],
     }

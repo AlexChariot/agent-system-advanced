@@ -1,154 +1,128 @@
-# from graph import build_graph
-
-import logging
-from unittest import result
+import json
 import subprocess
+from pathlib import Path
+
+import typer
+from agent_system.graph import build_graph
+from agent_system.logging_config import setup_logging
+
+# Apply colored logging once at startup — all agents inherit it
+setup_logging()
+
+app = typer.Typer()
+graph = build_graph()
+
+HISTORY_FILE = Path.home() / ".agent_system_history.json"
+_selected_model_file = Path.home() / ".agent_system_model"
+
+DEFAULT_MODEL = "llama3.1"
 
 
-def choose_llm_model():
-    """
-    Allow user to choose an LLM model from available Ollama models.
-    
-    Returns:
-        str: The selected model name, or None if no models are available or user cancels.
-    """
+def _load_history() -> list:
+    if HISTORY_FILE.exists():
+        try:
+            return json.loads(HISTORY_FILE.read_text())
+        except (json.JSONDecodeError, OSError):
+            return []
+    return []
+
+
+def _save_history(history: list) -> None:
     try:
-        # Get list of available models from ollama
+        HISTORY_FILE.write_text(json.dumps(history, ensure_ascii=False, indent=2))
+    except OSError as e:
+        typer.echo(f"[Warning] Could not save history: {e}", err=True)
+
+
+def _load_model() -> str:
+    if _selected_model_file.exists():
+        return _selected_model_file.read_text().strip() or DEFAULT_MODEL
+    return DEFAULT_MODEL
+
+
+def _save_model(model: str) -> None:
+    try:
+        _selected_model_file.write_text(model)
+    except OSError as e:
+        typer.echo(f"[Warning] Could not save model: {e}", err=True)
+
+
+def _list_ollama_models() -> list[str]:
+    try:
         result = subprocess.run(
-            ["ollama", "list"],
-            capture_output=True,
-            text=True,
-            check=True
+            ["ollama", "list"], capture_output=True, text=True, timeout=5
         )
-        
-        lines = result.stdout.strip().split("\n")
-        
-        # Skip header line and parse model names
-        if len(lines) <= 1:
-            print("No Ollama models available. Please install a model first using 'ollama pull <model>'")
-            return None
-        
-        models = []
-        for line in lines[1:]:  # Skip header
-            if line.strip():
-                # Extract model name (first column)
-                parts = line.split()
-                if parts:
-                    models.append(parts[0])
-        
-        if not models:
-            print("No Ollama models found.")
-            return None
-        
-        print("\nAvailable Ollama Models:")
-        for i, model in enumerate(models, 1):
-            print(f"{i}. {model}")
-        
-        while True:
-            try:
-                choice = input(f"\nSelect a model (1-{len(models)}) or press Enter to skip: ").strip()
-                if choice == "":
-                    return None
-                
-                choice_idx = int(choice) - 1
-                if 0 <= choice_idx < len(models):
-                    selected_model = models[choice_idx]
-                    print(f"Selected model: {selected_model}")
-                    return selected_model
-                else:
-                    print(f"Invalid choice. Please enter a number between 1 and {len(models)}.")
-            except ValueError:
-                print(f"Invalid input. Please enter a number between 1 and {len(models)}.")
-    
-    except FileNotFoundError:
-        print("Error: 'ollama' command not found. Please ensure Ollama is installed and in your PATH.")
-        return None
-    except subprocess.CalledProcessError as e:
-        print(f"Error running 'ollama list': {e.stderr}")
-        return None
-    except Exception as e:
-        print(f"An error occurred while fetching models: {e}")
-        return None
+        lines = result.stdout.strip().split("\n")[1:]
+        return [line.split()[0] for line in lines if line.strip()]
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return []
 
 
-def main():
-    """
-    Main function to run the Agent System.
+@app.command()
+def run(goal: str):
+    """Run the agent system with a goal."""
+    selected_model = _load_model()
+    history = _load_history()
 
-    This function builds the graph and allows the user to input goals.
-    It then invokes the graph with the goal and prints the final result.
-    """
-    from agent_system.graph import build_graph
-    print("Welcome to the Agent System!\n")
-    print("Default LLM Model: llama3.1")
-    print("(Select option 3 to change the model)\n")
-    
-    silence_logs = True  # Set to False to enable logging
-    if silence_logs:
-        logging.disable(logging.WARNING)    # Disable warnings and below (including info and debug logs)
+    typer.echo(f"Model : {selected_model}")
+    typer.echo(f"Goal  : {goal}\n")
 
-    graph = build_graph()
-    history = []
-    selected_model = None
+    result = graph.invoke({
+        "goal": goal,
+        "plan": [],
+        "history": [],
+        "selected_model": selected_model,
+    })
 
-    while True:
-        print("\nOptions:")
-        print("1. Enter a new goal")
-        print("2. View history")
-        print("3. Choose LLM Model")
-        print("4. Quit")
+    typer.echo("\n── FINAL RESULT ──\n")
+    typer.echo(result.get("result", "(no result)"))
 
-        choice = input("Choose an option (1-4): ")
+    history.append({"goal": goal, "result": result.get("result", "")})
+    _save_history(history)
 
-        if choice == "1":
-            goal = input("\nGoal: ")
 
-            if not goal.strip():
-                print("Error: Goal cannot be empty.")
-                continue
+@app.command()
+def models():
+    """List available Ollama models."""
+    available = _list_ollama_models()
 
-            try:
-                result = graph.invoke({
-                    "goal": goal,
-                    "plan": [],
-                    "history": history,
-                    "selected_model": selected_model or "llama3.1"
-                })
-                
-                
-                
-                print("\nFINAL RESULT\n")
-                print(result["result"])
+    if not available:
+        typer.echo("No models found. Is Ollama running? (`ollama serve`)")
+        return
 
-                # Update history with the goal and result
-                history.append({
-                    "goal": goal,
-                    "result": result["result"]
-                })
+    current = _load_model()
+    for m in available:
+        marker = " ◀ active" if m == current else ""
+        typer.echo(f"  {m}{marker}")
 
-            except Exception as e:
-                print(f"An error occurred: {e}")
 
-        elif choice == "2":
-            if not history:
-                print("No history available.")
-            else:
-                print("\nHistory:")
-                for i, item in enumerate(history, 1):
-                    print(f"{i}. Goal: {item['goal']}")
-                    print(f"   Result: {item['result']}\n")
+@app.command()
+def set_model(model: str):
+    """Set the active LLM model (persisted across sessions)."""
+    _save_model(model)
+    typer.echo(f"Model set to: {model}")
 
-        elif choice == "3":
-            selected_model = choose_llm_model()
-            if selected_model:
-                print(f"Current model: {selected_model}")
 
-        elif choice == "4":
-            print("Exiting the Agent System.")
-            break
+@app.command()
+def show_history():
+    """Show past executions (persisted across sessions)."""
+    history = _load_history()
 
-        else:
-            print("Invalid choice. Please enter a number between 1 and 4.")
+    if not history:
+        typer.echo("No history.")
+        return
+
+    for i, item in enumerate(history, 1):
+        typer.echo(f"{i}. {item['goal']}")
+        typer.echo(f"   → {item['result']}\n")
+
+
+@app.command()
+def clear_history():
+    """Clear the persisted execution history."""
+    _save_history([])
+    typer.echo("History cleared.")
+
 
 if __name__ == "__main__":
-    main()
+    app()
