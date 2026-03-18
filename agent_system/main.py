@@ -9,7 +9,7 @@ from agent_system.logging_config import setup_logging
 # Apply colored logging once at startup — all agents inherit it
 setup_logging()
 
-app = typer.Typer()
+app = typer.Typer(add_completion=False)
 graph = build_graph()
 
 HISTORY_FILE = Path.home() / ".agent_system_history.json"
@@ -115,6 +115,12 @@ def show_history():
     for i, item in enumerate(history, 1):
         typer.echo(f"{i}. {item['goal']}")
         typer.echo(f"   → {item['result']}\n")
+
+
+@app.command()
+def current_model():
+    """Show the current LLM model."""
+    typer.echo(f"Current model: {_load_model()}")
 
 
 @app.command()
