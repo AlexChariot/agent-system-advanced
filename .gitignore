@@ -39,7 +39,6 @@ chromadb/
 # Local data
 
 data/
-memory/
 
 # Ollama models (if stored locally)
 
