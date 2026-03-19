@@ -16,6 +16,10 @@ This project demonstrates a modern **agentic architecture** using a properly str
 - Evaluation and refinement loops
 - Fully local LLM via Ollama
 - Clean Python package structure with `uv`
+- **Organized CLI with command groups** (core, memory, state, testing, utils)
+- **Memory management tools** (inspect, search, export, clear)
+- **Testing and benchmarking utilities**
+- **Configuration and state inspection**
 - CLI entrypoint
 
 ---
@@ -165,7 +169,7 @@ agent-system-advanced/
 │
 ├── agent_system/
 │   ├── __init__.py
-│   ├── main.py               # CLI entrypoint (typer)
+│   ├── main.py               # CLI entrypoint (typer) with grouped commands
 │   ├── graph.py              # LangGraph workflow definition
 │   ├── state.py              # Shared AgentState (TypedDict)
 │   │
@@ -288,7 +292,50 @@ uv run agent show-history
 uv run agent clear-history
 ```
 
-> History and the active model are persisted between sessions in `~/.agent_system_history.json` and `~/.agent_system_model`.
+> History and the active model are persisted between sessions in `~/.agent_system_history.json` and `~/.agent_system_model`. Configuration is stored in `~/.agent_system_config.json`.
+
+---
+
+## CLI Commands
+
+The CLI is organized into command groups for better usability. Use `uv run agent --help` to see all groups, and `uv run agent <group> --help` for commands in a group.
+
+### Core Operations (`core`)
+Essential commands for running the agent system:
+
+- **`run <goal>`** : Execute the agent system with a goal
+- **`models`** : List available Ollama models
+- **`set-model <model>`** : Set the active LLM model
+- **`show-history`** : Display past executions
+- **`current-model`** : Show the current model
+- **`clear-history`** : Clear execution history
+
+### Memory Management (`memory`)
+Manage the vector memory database:
+
+- **`inspect-memory`** : Show memory count and sample entries
+- **`clear-memory`** : Delete all stored memories (irreversible)
+- **`export-memory [file]`** : Export memory to JSON file
+- **`search-memory <query>`** : Manually search memory
+
+### State & Configuration (`state`)
+Inspect and configure system state:
+
+- **`show-state`** : Display last execution state
+- **`set-config <param> <value>`** : Set configuration parameters (e.g., recall_k)
+
+### Testing & Benchmarking (`testing`)
+Test agents and measure performance:
+
+- **`test-agents`** : Run basic unit tests on agents
+- **`benchmark [goal]`** : Benchmark execution time (default: open-source LLMs report)
+- **`stats`** : Show usage statistics (runs, errors, success rate)
+
+### Utilities (`utils`)
+Miscellaneous tools:
+
+- **`backup [dir]`** : Backup history and memory to directory
+- **`version`** : Display project version
 
 ---
 
