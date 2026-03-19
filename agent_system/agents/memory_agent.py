@@ -32,10 +32,13 @@ def memory_agent(state: dict) -> dict:
     logger.info(f"[MemoryAgent] Retrieving memories for: {query[:80]}...")
     retrieved = recall_memory(query)
 
-    # Context compresses memories for downstream agents
-    context = f"[Retrieved long-term memory]\n{retrieved}" if retrieved else ""
-
-    logger.info(f"[MemoryAgent] Context injected ({len(retrieved)} chars).")
+    # Context compresses memories for downstream agents (skip if no relevant memories)
+    if retrieved:
+        context = f"[Retrieved long-term memory]\n{retrieved}"
+        logger.info(f"[MemoryAgent] Context injected ({len(retrieved)} chars).")
+    else:
+        context = ""
+        logger.info("[MemoryAgent] No relevant memories found, proceeding without context.")
 
     return {
         "retrieved_memory": retrieved,

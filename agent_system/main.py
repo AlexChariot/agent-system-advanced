@@ -61,18 +61,29 @@ def _list_ollama_models() -> list[str]:
 @app.command()
 def run(goal: str):
     """Run the agent system with a goal."""
+    if not goal or not goal.strip():
+        typer.echo("Error: Goal cannot be empty.", err=True)
+        raise typer.Exit(code=1)
+
     selected_model = _load_model()
     history = _load_history()
 
     typer.echo(f"Model : {selected_model}")
     typer.echo(f"Goal  : {goal}\n")
 
-    result = graph.invoke({
-        "goal": goal,
-        "plan": [],
-        "history": [],
-        "selected_model": selected_model,
-    })
+    try:
+        result = graph.invoke({
+            "goal": goal,
+            "plan": [],
+            "history": [],
+            "selected_model": selected_model,
+        })
+    except Exception as e:
+        typer.echo(f"\nError during execution: {e}", err=True)
+        # Still save history for partial/failed attempts
+        history.append({"goal": goal, "result": f"[ERROR] {str(e)}"})
+        _save_history(history)
+        raise typer.Exit(code=1)
 
     typer.echo("\n── FINAL RESULT ──\n")
     typer.echo(result.get("result", "(no result)"))
@@ -99,6 +110,24 @@ def models():
 @app.command()
 def set_model(model: str):
     """Set the active LLM model (persisted across sessions)."""
+    available = _list_ollama_models()
+
+    if not available:
+        typer.echo("Warning: Could not verify available models (Ollama not running?).", err=True)
+        typer.echo("Proceeding anyway...", err=True)
+        _save_model(model)
+        typer.echo(f"Model set to: {model}")
+        return
+
+    if model not in available:
+        typer.echo(
+            f"Error: Model '{model}' not found in Ollama. Available models:",
+            err=True,
+        )
+        for m in available:
+            typer.echo(f"  - {m}", err=True)
+        raise typer.Exit(code=1)
+
     _save_model(model)
     typer.echo(f"Model set to: {model}")
 

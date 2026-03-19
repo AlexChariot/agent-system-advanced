@@ -1,6 +1,7 @@
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -48,9 +49,10 @@ Reply with ONLY YES or NO.
 
     raw = response.content.strip().upper()
 
-    if "YES" in raw:
+    # Strict regex matching: look for YES or NO at word boundaries
+    if re.search(r'\bYES\b', raw):
         evaluation = "YES"
-    elif "NO" in raw:
+    elif re.search(r'\bNO\b', raw):
         evaluation = "NO"
     else:
         logger.warning(f"[Critic] Ambiguous response '{raw}', falling back to NO.")

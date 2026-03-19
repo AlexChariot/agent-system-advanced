@@ -31,8 +31,13 @@ def researcher(state: dict) -> dict:
         logger.warning("[Researcher] No results found.")
         data = "No relevant information found."
 
-    # Advance the plan by removing the completed task
-    remaining_plan = [t for t in plan if t != task]
+    # Advance the plan by removing only the first instance of the completed task
+    remaining_plan = plan.copy()
+    try:
+        remaining_plan.remove(task)
+    except ValueError:
+        # Task not in plan, this shouldn't happen but handle gracefully
+        logger.warning(f"[Researcher] Task '{task}' not found in plan.")
 
     # None signals to the manager that the plan is exhausted
     next_task = remaining_plan[0] if remaining_plan else None

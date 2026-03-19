@@ -92,7 +92,7 @@ def recall_memory(query: str, k: int = 5) -> str:
 
         if not docs:
             logger.warning("[VectorMemory] No relevant memories found.")
-            return "No relevant memories found."
+            return ""
 
         recalled_text = "\n".join([d.page_content for d in docs])
         logger.info(f"[VectorMemory] {len(docs)} memory/memories recalled.")

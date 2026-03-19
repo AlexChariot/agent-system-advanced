@@ -57,6 +57,10 @@ def manager(state: dict) -> dict:
         next_agent = "critic"
         reason = "Result available — sending to the critic for evaluation."
 
+    elif evaluation == "YES":
+        next_agent = "critic"
+        reason = "Result already evaluated positively — routed to critic for final handling."
+
     elif evaluation == "NO":
         next_agent = _llm_decide(state, model)
         reason = f"Negative evaluation — LLM re-routing decision: {next_agent}."

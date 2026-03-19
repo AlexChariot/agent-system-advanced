@@ -72,7 +72,15 @@ def build_graph():
         _should_end,
         {
             "manager": "manager",
-            END: END,
+            END: END,# The `invoke` method is being called on the `graph` object in the `run`
+            # command function. This method is used to trigger the execution of the agent
+            # system with a specific goal. The `invoke` method takes a dictionary
+            # containing information about the goal, plan, history, and selected model as
+            # input parameters. It then processes this information within the agent system
+            # to determine the result of the execution based on the defined logic and rules
+            # within the system. The result of the `invoke` method call is then displayed
+            # to the user as the final output of the execution.
+            
         },
     )
 
