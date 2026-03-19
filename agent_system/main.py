@@ -335,6 +335,8 @@ def benchmark(goal: Optional[str] = None):
     """Benchmark execution time for a goal (default: open source LLMs report)."""
     if not goal:
         goal = "Write a report on the impact of open source LLMs"
+    
+    typer.echo(f"Benchmarking goal: {goal}\n")
     start = time.time()
     try:
         result = graph.invoke({
@@ -344,10 +346,30 @@ def benchmark(goal: Optional[str] = None):
             "selected_model": _load_model(),
         })
         elapsed = time.time() - start
-        typer.echo(".2f")
-        typer.echo(f"Result: {result.get('result', '(no result)')[:200]}...")
+        
+        # Extract metrics
+        plan_count = len(result.get("plan", []))
+        history = result.get("history", [])
+        steps = len(history)
+        final_result = result.get("result", "")
+        result_length = len(final_result)
+        
+        # Estimate tokens (rough: ~4 chars per token)
+        estimated_tokens = (len(goal) + result_length) // 4
+        
+        # Display results
+        typer.echo("── BENCHMARK RESULTS ──\n")
+        typer.echo(f"Execution time: {elapsed:.2f}s")
+        typer.echo(f"Agent steps: {steps}")
+        typer.echo(f"Tasks in plan: {plan_count}")
+        typer.echo(f"Output length: {result_length} chars")
+        typer.echo(f"Est. tokens: ~{estimated_tokens}")
+        typer.echo(f"\n── OUTPUT PREVIEW ──\n")
+        typer.echo(f"{final_result[:300]}..." if len(final_result) > 300 else final_result)
+        
     except Exception as e:
-        typer.echo(f"Benchmark failed: {e}")
+        typer.echo(f"Benchmark failed: {e}", err=True)
+        raise typer.Exit(code=1)
 
 
 @testing_app.command()
