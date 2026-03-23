@@ -30,7 +30,7 @@ setup_logging()
 # Allow both --help and -h on every command and sub-command
 _CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
-app = typer.Typer(add_completion=False, context_settings=_CONTEXT_SETTINGS)
+app = typer.Typer(context_settings=_CONTEXT_SETTINGS)
 
 # Sub-apps for grouping commands
 core_app    = typer.Typer(help="Core agent operations",      context_settings=_CONTEXT_SETTINGS)
