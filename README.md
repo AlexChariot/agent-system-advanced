@@ -17,6 +17,8 @@ This project demonstrates a modern **agentic architecture** using a properly str
 - Fully local LLM via Ollama
 - Clean Python package structure with `uv`
 - **Organized CLI with command groups** (core, memory, state, testing, utils)
+- **`-h` shorthand** supported on every command and sub-command (in addition to `--help`)
+- **Model introspection** (`model-info`, `models-info`) — parameters, architecture, context length, embedding size, quantization
 - **Memory management tools** (inspect, search, export, clear)
 - **Testing and benchmarking utilities**
 - **Configuration and state inspection**
@@ -271,28 +273,51 @@ uv run agent run "Analyze the impact of open-source LLMs"
 ### List available models
 
 ```bash
-uv run agent models
+uv run agent core models
+```
+
+### Show detailed info on a model
+
+```bash
+# Active model
+uv run agent core model-info
+
+# Specific model
+uv run agent core model-info llama3.1:q4_0
+```
+
+### Compare all models at a glance
+
+```bash
+uv run agent core models-info
 ```
 
 ### Switch model
 
 ```bash
-uv run agent set-model mistral
+uv run agent core set-model mistral
 ```
 
 ### Show execution history
 
 ```bash
-uv run agent show-history
+uv run agent core show-history
 ```
 
 ### Clear execution history
 
 ```bash
-uv run agent clear-history
+uv run agent core clear-history
 ```
 
 > History and the active model are persisted between sessions in `~/.agent_system_history.json` and `~/.agent_system_model`. Configuration is stored in `~/.agent_system_config.json`.
+
+> **Tip:** every command accepts `-h` as a shorthand for `--help` at all levels:
+> ```bash
+> uv run agent -h
+> uv run agent core -h
+> uv run agent core model-info -h
+> ```
 
 ---
 
@@ -309,6 +334,8 @@ Essential commands for running the agent system:
 - **`show-history`** : Display past executions
 - **`current-model`** : Show the current model
 - **`clear-history`** : Clear execution history
+- **`model-info [model]`** : Show detailed info for a model (parameters, architecture, context length, embedding size, quantization) — defaults to the active model
+- **`models-info`** : Show a summary table of all available models with key metadata
 
 ### Memory Management (`memory`)
 Manage the vector memory database:
@@ -442,18 +469,24 @@ uv run agent run "Analyze the implications of the US-China rivalry on the semico
 
 ```bash
 # Switch model based on task complexity
-uv run agent set-model mistral        # fast, for simple tasks
-uv run agent set-model llama3.1       # balanced (default)
-uv run agent set-model deepseek-r1    # deep reasoning
+uv run agent core set-model mistral        # fast, for simple tasks
+uv run agent core set-model llama3.1       # balanced (default)
+uv run agent core set-model deepseek-r1    # deep reasoning
 
 # Check available local models (active model is marked)
-uv run agent models
+uv run agent core models
+
+# Show detailed info for a specific model
+uv run agent core model-info llama3.1
+
+# Show a summary table of all models with metadata
+uv run agent core models-info
 
 # Review past executions
-uv run agent show-history
+uv run agent core show-history
 
 # Reset history
-uv run agent clear-history
+uv run agent core clear-history
 ```
 
 ### Leveraging Long-Term Memory

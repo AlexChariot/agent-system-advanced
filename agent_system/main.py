@@ -27,14 +27,17 @@ except ImportError:
 # Apply colored logging once at startup — all agents inherit it
 setup_logging()
 
-app = typer.Typer(add_completion=False)
+# Allow both --help and -h on every command and sub-command
+_CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+
+app = typer.Typer(add_completion=False, context_settings=_CONTEXT_SETTINGS)
 
 # Sub-apps for grouping commands
-core_app = typer.Typer(help="Core agent operations")
-memory_app = typer.Typer(help="Vector memory management")
-state_app = typer.Typer(help="State and configuration")
-testing_app = typer.Typer(help="Testing and benchmarking")
-utils_app = typer.Typer(help="Utilities")
+core_app    = typer.Typer(help="Core agent operations",      context_settings=_CONTEXT_SETTINGS)
+memory_app  = typer.Typer(help="Vector memory management",   context_settings=_CONTEXT_SETTINGS)
+state_app   = typer.Typer(help="State and configuration",    context_settings=_CONTEXT_SETTINGS)
+testing_app = typer.Typer(help="Testing and benchmarking",   context_settings=_CONTEXT_SETTINGS)
+utils_app   = typer.Typer(help="Utilities",                  context_settings=_CONTEXT_SETTINGS)
 
 # Add sub-apps to main app
 app.add_typer(core_app, name="core", help="Core agent operations")
@@ -215,6 +218,139 @@ def show_history():
 def current_model():
     """Show the current LLM model."""
     typer.echo(f"Current model: {_load_model()}")
+
+
+def _get_ollama_model_info(model: str) -> Optional[dict]:
+    """Fetch detailed model info from Ollama via `ollama show --json`."""
+    try:
+        result = subprocess.run(
+            ["ollama", "show", "--json", model],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode != 0:
+            return None
+        return json.loads(result.stdout)
+    except (FileNotFoundError, subprocess.TimeoutExpired, json.JSONDecodeError):
+        return None
+
+
+def _format_params(n: Optional[int]) -> str:
+    """Format a raw parameter count into a human-readable string (e.g. 7.0B)."""
+    if n is None:
+        return "Unknown"
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}B"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    return str(n)
+
+
+def _extract_model_fields(data: dict, model_name: str) -> dict:
+    """Extract architecture, params, context, embedding and quantization from raw Ollama JSON."""
+    details = data.get("details") or {}
+    meta = data.get("model_info") or data.get("modelinfo") or {}
+
+    arch = (
+        meta.get("general.architecture")
+        or details.get("architecture")
+    )
+
+    def _meta(*keys):
+        for k in keys:
+            v = meta.get(k)
+            if v is not None:
+                return v
+        return None
+
+    params   = _meta("general.parameter_count")
+    ctx      = _meta(f"{arch}.context_length", "context_length")
+    emb      = _meta(f"{arch}.embedding_length", "embedding_length")
+    quant    = (
+        details.get("quantization_level")
+        or data.get("quantization_level")
+    )
+    # Infer quantization from the model tag when not reported (e.g. "llama3.1:q4_0")
+    if not quant and ":" in model_name:
+        tag = model_name.split(":")[-1]
+        if tag.lower().startswith("q") or "fp" in tag.lower() or "bf" in tag.lower():
+            quant = tag.upper()
+
+    families = details.get("families") or details.get("family")
+    if isinstance(families, list):
+        families = ", ".join(families)
+
+    return {
+        "architecture": arch,
+        "params": params,
+        "context_length": ctx,
+        "embedding_length": emb,
+        "quantization": quant,
+        "family": families,
+    }
+
+
+@core_app.command()
+def model_info(
+    model: Optional[str] = typer.Argument(None, help="Model name (defaults to active model)")
+):
+    """Show detailed info for a model: parameters, architecture, context length, embedding size, quantization."""
+    target = model or _load_model()
+    typer.echo(f"Fetching info for: {target}\n")
+
+    data = _get_ollama_model_info(target)
+    if data is None:
+        typer.echo(
+            f"Error: could not retrieve info for '{target}'. "
+            "Is Ollama running and the model pulled?",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    f = _extract_model_fields(data, target)
+
+    typer.echo(f"  {'Model':<22} {target}")
+    typer.echo(f"  {'Architecture':<22} {f['architecture'] or 'Unknown'}")
+    typer.echo(f"  {'Parameters':<22} {_format_params(f['params'])}")
+    typer.echo(f"  {'Context length':<22} {f['context_length'] or 'Unknown'}")
+    typer.echo(f"  {'Embedding length':<22} {f['embedding_length'] or 'Unknown'}")
+    typer.echo(f"  {'Quantization':<22} {f['quantization'] or 'Unknown'}")
+    if f["family"]:
+        typer.echo(f"  {'Family':<22} {f['family']}")
+
+
+@core_app.command()
+def models_info():
+    """Show a summary table of all available models with key metadata."""
+    available = _list_ollama_models()
+    if not available:
+        typer.echo("No models found. Is Ollama running? (`ollama serve`)")
+        return
+
+    current = _load_model()
+    col = (35, 12, 10, 10, 10, 10)
+    header = (
+        f"{'Model':<{col[0]}} {'Arch':<{col[1]}} {'Params':<{col[2]}} "
+        f"{'Context':<{col[3]}} {'Embed':<{col[4]}} {'Quant':<{col[5]}}"
+    )
+    typer.echo(header)
+    typer.echo("─" * len(header))
+
+    for m in available:
+        active = " ◀" if m == current else ""
+        data = _get_ollama_model_info(m)
+        if data is None:
+            typer.echo(f"{(m + active):<{col[0]}} {'(unavailable)'}")
+            continue
+
+        f = _extract_model_fields(data, m)
+        typer.echo(
+            f"{(m + active):<{col[0]}} "
+            f"{str(f['architecture'] or '?'):<{col[1]}} "
+            f"{_format_params(f['params']):<{col[2]}} "
+            f"{str(f['context_length'] or '?'):<{col[3]}} "
+            f"{str(f['embedding_length'] or '?'):<{col[4]}} "
+            f"{str(f['quantization'] or '?'):<{col[5]}}"
+        )
 
 
 @core_app.command()
