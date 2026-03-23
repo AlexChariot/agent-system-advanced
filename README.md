@@ -18,6 +18,7 @@ This project demonstrates a modern **agentic architecture** using a properly str
 - Clean Python package structure with `uv`
 - **Organized CLI with command groups** (core, memory, state, testing, utils)
 - **`-h` shorthand** supported on every command and sub-command (in addition to `--help`)
+- **Bash completion** for `uv run agent` via a custom install script
 - **Model introspection** (`model-info`, `models-info`) — parameters, architecture, context length, embedding size, quantization
 - **Memory management tools** (inspect, search, export, clear)
 - **Testing and benchmarking utilities**
@@ -259,6 +260,23 @@ ollama pull llama3.1
 # Start the server
 ollama serve
 ```
+
+### 5. Enable bash completion (optional)
+
+```bash
+chmod +x install_completion.sh
+./install_completion.sh
+source ~/.bashrc
+```
+
+This installs a custom completion script (`~/.agent_system_completion.bash`) and registers it in your `~/.bashrc`. From then on, `TAB` autocompletes commands and subcommands:
+
+```bash
+uv run agent <TAB>         # core  memory  state  testing  utils
+uv run agent core <TAB>    # run  models  set-model  model-info ...
+```
+
+> The script is idempotent — safe to run multiple times.
 
 ---
 
