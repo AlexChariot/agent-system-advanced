@@ -437,33 +437,57 @@ def set_config(param: str, value: str):
 
 @testing_app.command()
 def test_agents():
-    """Run basic unit tests on agents."""
+    """Run basic unit tests on all agents."""
     typer.echo("Testing agents...")
     model = _load_model()
-    state = {"goal": "Test goal", "selected_model": model}
 
-    # Test planner
-    try:
-        result = planner(state)
-        typer.echo("✓ Planner: OK")
-    except Exception as e:
-        typer.echo(f"✗ Planner: {e}")
+    # Base state shared by most agents
+    base_state = {
+        "goal": "Test goal",
+        "selected_model": model,
+        "plan": ["Step 1", "Step 2"],
+        "current_task": "Step 1",
+        "research": "",
+        "analysis": "",
+        "result": "",
+        "context": "",
+        "retrieved_memory": "",
+        "evaluation": "",
+        "history": [],
+    }
 
-    # Test memory_agent
-    try:
-        result = memory_agent(state)
-        typer.echo("✓ Memory Agent: OK")
-    except Exception as e:
-        typer.echo(f"✗ Memory Agent: {e}")
+    passed = 0
+    failed = 0
 
-    # Test critic
-    try:
-        result = critic({"result": "Test result", "goal": "Test goal", "selected_model": model})
-        typer.echo("✓ Critic: OK")
-    except Exception as e:
-        typer.echo(f"✗ Critic: {e}")
+    def _run(label: str, fn, state: dict):
+        nonlocal passed, failed
+        try:
+            fn(state)
+            typer.echo(f"  ✓ {label}: OK")
+            passed += 1
+        except Exception as e:
+            typer.echo(f"  ✗ {label}: {e}")
+            failed += 1
 
-    typer.echo("Tests completed.")
+    # Planner — only needs goal + model
+    _run("Planner", planner, {**base_state})
+
+    # Memory Agent — runs after planning
+    _run("Memory Agent", memory_agent, {**base_state})
+
+    # Researcher — needs a current task to search for
+    _run("Researcher", researcher, {**base_state})
+
+    # Analyst — needs research output
+    _run("Analyst", analyst, {**base_state, "research": "Sample research data about test goal."})
+
+    # Executor — needs analysis output
+    _run("Executor", executor, {**base_state, "analysis": "Sample analysis: key insight extracted."})
+
+    # Critic — needs a result to evaluate
+    _run("Critic", critic, {**base_state, "result": "Sample final result for the test goal."})
+
+    typer.echo(f"\nTests completed: {passed} passed, {failed} failed.")
 
 
 @testing_app.command()

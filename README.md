@@ -354,7 +354,7 @@ Inspect and configure system state:
 ### Testing & Benchmarking (`testing`)
 Test agents and measure performance:
 
-- **`test-agents`** : Run basic unit tests on agents
+- **`test-agents`** : Run basic unit tests on all 6 agents (Planner, Memory Agent, Researcher, Analyst, Executor, Critic) with a realistic shared state — displays a passed/failed summary
 - **`benchmark [goal]`** : Benchmark execution time (default: open-source LLMs report)
 - **`stats`** : Show usage statistics (runs, errors, success rate)
 
