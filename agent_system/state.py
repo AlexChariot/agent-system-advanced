@@ -12,9 +12,10 @@ class AgentState(TypedDict):
         current_task (Optional[str]): The task currently being worked on.
                                       None when the plan is exhausted.
 
-        research (str): Information gathered during the research phase.
-        analysis (str): Results of the analysis performed on the research data.
+        research (str): Information gathered for the current task.
+        analysis (str): Aggregated analysis across all completed tasks.
         result (str): The final outcome after execution.
+        completed_tasks (List[str]): Ordered list of tasks that have already been analyzed.
 
         history (List[Dict]): Append-only record of agent actions (managed by LangGraph).
         context (str): Compressed contextual information passed between agents.
@@ -31,6 +32,7 @@ class AgentState(TypedDict):
     research: str
     analysis: str
     result: str
+    completed_tasks: List[str]
 
     history: Annotated[List[Dict], operator.add]
     context: str

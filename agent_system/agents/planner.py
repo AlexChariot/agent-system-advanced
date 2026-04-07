@@ -26,7 +26,7 @@ def planner(state: dict) -> dict:
 Goal:
 {goal}
 
-Return one task per line, with no numbering or bullet points.
+Return one task per line, with no numbering, no bullet points and no introductive text.
 """
 
     llm = ChatOllama(model=model)
@@ -45,5 +45,10 @@ Return one task per line, with no numbering or bullet points.
     return {
         "plan": tasks,
         "current_task": tasks[0],
+        "research": "",
+        "analysis": "",
+        "result": "",
+        "evaluation": "",
+        "completed_tasks": [],
         "history": [{"agent": "planner", "tasks": tasks}],
     }

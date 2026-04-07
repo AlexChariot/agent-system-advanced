@@ -29,29 +29,35 @@ def manager(state: dict) -> dict:
         dict: Updated state with `next_agent` and a `history` entry.
     """
     plan = state.get("plan", [])
+    current_task = state.get("current_task")
     research = state.get("research", "")
     analysis = state.get("analysis", "")
     result = state.get("result", "")
     evaluation = state.get("evaluation", "")
+    completed_tasks = state.get("completed_tasks", [])
     model = state.get("selected_model", "llama3.1")
 
     # ── 1. Deterministic rules ───────────────────────────────────────────────
 
-    if not plan:
+    if evaluation == "NO":
+        next_agent = "executor"
+        reason = "Negative evaluation — clearing the prior result and retrying execution from the aggregated analysis."
+
+    elif not plan and not current_task and not completed_tasks and not analysis:
         next_agent = "planner"
         reason = "No plan available — starting with the planner."
 
-    elif not research:
+    elif current_task and not research:
         next_agent = "researcher"
-        reason = "Plan ready, but no research has been done yet."
+        reason = "Current task ready, but no research has been done yet."
 
-    elif not analysis:
+    elif current_task and research:
         next_agent = "analyst"
-        reason = "Research available, but no analysis has been performed yet."
+        reason = "Research available for the current task — sending it to the analyst."
 
-    elif not result:
+    elif not current_task and analysis and not result:
         next_agent = "executor"
-        reason = "Analysis available, but no result has been produced yet."
+        reason = "All planned tasks are complete — sending the aggregated analysis to the executor."
 
     elif result and not evaluation:
         next_agent = "critic"
@@ -61,20 +67,22 @@ def manager(state: dict) -> dict:
         next_agent = "critic"
         reason = "Result already evaluated positively — routed to critic for final handling."
 
-    elif evaluation == "NO":
-        next_agent = _llm_decide(state, model)
-        reason = f"Negative evaluation — LLM re-routing decision: {next_agent}."
-
     else:
         next_agent = _llm_decide(state, model)
         reason = f"Ambiguous state — LLM routing decision: {next_agent}."
 
     logger.info(f"[Manager] → {next_agent} | {reason}")
 
-    return {
+    update = {
         "next_agent": next_agent,
         "history": [{"agent": "manager", "decision": next_agent, "reason": reason}],
     }
+
+    if evaluation == "NO":
+        update["result"] = ""
+        update["evaluation"] = ""
+
+    return update
 
 
 def _llm_decide(state: dict, model: str) -> str:

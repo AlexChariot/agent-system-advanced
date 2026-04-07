@@ -111,21 +111,6 @@ def _list_ollama_models() -> list[str]:
         return []
 
 
-def _save_config(config: dict) -> None:
-    try:
-        CONFIG_FILE.write_text(json.dumps(config, indent=2))
-    except OSError as e:
-        typer.echo(f"[Warning] Could not save config: {e}", err=True)
-    try:
-        result = subprocess.run(
-            ["ollama", "list"], capture_output=True, text=True, timeout=5
-        )
-        lines = result.stdout.strip().split("\n")[1:]
-        return [line.split()[0] for line in lines if line.strip()]
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        return []
-
-
 @core_app.command()
 def run(goal: str):
     """Run the agent system with a goal."""
@@ -143,6 +128,12 @@ def run(goal: str):
         result = graph.invoke({
             "goal": goal,
             "plan": [],
+            "current_task": None,
+            "research": "",
+            "analysis": "",
+            "result": "",
+            "completed_tasks": [],
+            "evaluation": "",
             "history": [],
             "selected_model": selected_model,
         })
@@ -450,6 +441,7 @@ def test_agents():
         "research": "",
         "analysis": "",
         "result": "",
+        "completed_tasks": [],
         "context": "",
         "retrieved_memory": "",
         "evaluation": "",
@@ -502,6 +494,12 @@ def benchmark(goal: Optional[str] = None):
         result = graph.invoke({
             "goal": goal,
             "plan": [],
+            "current_task": None,
+            "research": "",
+            "analysis": "",
+            "result": "",
+            "completed_tasks": [],
+            "evaluation": "",
             "history": [],
             "selected_model": _load_model(),
         })
